@@ -165,7 +165,8 @@ struct Score {
 enum GameState {
     Menu { selected: usize },
     Controls,
-    Playing,
+    SinglePlayer,
+    TwoPlayer,
     GameOver,
 }
 
@@ -234,8 +235,8 @@ impl<'a> Game<'a> {
 
                 if is_key_pressed(KeyCode::Enter) {
                     self.game_state = match selected {
-                        0 => GameState::Playing,
-                        1 => GameState::Playing,
+                        0 => GameState::SinglePlayer,
+                        1 => GameState::TwoPlayer,
                         2 => GameState::Controls,
                         3 => std::process::exit(0),
                         _ => GameState::Menu { selected: 0 },
@@ -249,7 +250,23 @@ impl<'a> Game<'a> {
                 }
             }
 
-            GameState::Playing => {
+            GameState::SinglePlayer => {
+                if self.score.update(&self.ball) {
+                    self.ball.increase_speed();
+
+                    self.ball.reset();
+
+                    if self.score.left >= WIN_SCORE {
+                        self.winner = "Left player wins!".to_string();
+                        self.game_state = GameState::GameOver;
+                    } else if self.score.right >= WIN_SCORE {
+                        self.winner = "Right player wins!".to_string();
+                        self.game_state = GameState::GameOver;
+                    }
+                }
+            }
+
+            GameState::TwoPlayer => {
                 self.left.update(dt, KeyCode::W, KeyCode::S);
                 self.right.update(dt, KeyCode::Up, KeyCode::Down);
                 self.ball.update(dt);
@@ -269,13 +286,14 @@ impl<'a> Game<'a> {
                     }
                 }
             }
+
             GameState::GameOver => {
                 if is_key_pressed(KeyCode::R) {
                     self.score = Score::default();
                     self.ball.reset_game();
                     self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
                     self.right = Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
-                    self.game_state = GameState::Playing;
+                    self.game_state = GameState::SinglePlayer;
                 }
             }
         }
@@ -417,7 +435,17 @@ impl<'a> Game<'a> {
                 );
             }
 
-            GameState::Playing => {
+            GameState::SinglePlayer => {
+                clear_background(BLACK);
+                draw_centre_line();
+
+                self.left.draw();
+                self.right.draw();
+                self.ball.draw();
+                self.score.draw();
+            }
+
+            GameState::TwoPlayer => {
                 clear_background(BLACK);
                 draw_centre_line();
 
