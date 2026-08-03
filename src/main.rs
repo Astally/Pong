@@ -46,6 +46,21 @@ impl<'a> Paddle<'a> {
 
         self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - PADDLE_H);
     }
+
+    fn update_ai(&mut self, ball: &Ball, dt: f32) {
+        let ball_center = ball.rect.y + ball.rect.h / 2.0;
+        let paddle_center = self.rect.y + self.rect.h / 2.0;
+
+        let diff = ball_center - paddle_center;
+
+        if diff > 5.0 {
+            self.rect.y += PADDLE_SPEED * dt;
+        } else if diff < -5.0 {
+            self.rect.y -= PADDLE_SPEED * dt;
+        }
+
+        self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - PADDLE_H);
+    }
 }
 
 struct Ball<'a> {
@@ -275,7 +290,7 @@ impl<'a> Game<'a> {
 
                 match self.game_mode {
                     GameMode::SinglePlayer => {
-                        // AI
+                        self.left.update_ai(&self.ball, dt);
                     }
 
                     GameMode::TwoPlayer => {
