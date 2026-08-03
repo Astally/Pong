@@ -165,9 +165,14 @@ struct Score {
 enum GameState {
     Menu { selected: usize },
     Controls,
+    Playing,
+    GameOver,
+}
+
+#[derive(PartialEq)]
+enum GameMode {
     SinglePlayer,
     TwoPlayer,
-    GameOver,
 }
 
 impl Score {
@@ -199,12 +204,14 @@ struct Game<'a> {
     right: Paddle<'a>,
     score: Score,
     game_state: GameState,
+    game_mode: GameMode,
     winner: String,
 }
 
 impl<'a> Game<'a> {
     fn new(paddle_texture: &'a Texture2D, ball_texture: &'a Texture2D) -> Self {
         let game_state = GameState::Menu { selected: 0 };
+        let game_mode = GameMode::SinglePlayer;
 
         let score = Score::default();
         let winner = "".to_string();
@@ -218,6 +225,7 @@ impl<'a> Game<'a> {
             right,
             score,
             game_state,
+            game_mode,
             winner,
         }
     }
@@ -235,8 +243,28 @@ impl<'a> Game<'a> {
 
                 if is_key_pressed(KeyCode::Enter) {
                     self.game_state = match selected {
-                        0 => GameState::SinglePlayer,
-                        1 => GameState::TwoPlayer,
+                        0 => {
+                            self.score = Score::default();
+                            self.ball.reset_game();
+
+                            self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
+                            self.right =
+                                Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
+
+                            self.game_mode = GameMode::SinglePlayer;
+                            GameState::Playing
+                        }
+                        1 => {
+                            self.score = Score::default();
+                            self.ball.reset_game();
+
+                            self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
+                            self.right =
+                                Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
+
+                            self.game_mode = GameMode::TwoPlayer;
+                            GameState::Playing
+                        }
                         2 => GameState::Controls,
                         3 => std::process::exit(0),
                         _ => GameState::Menu { selected: 0 },
@@ -250,25 +278,19 @@ impl<'a> Game<'a> {
                 }
             }
 
-            GameState::SinglePlayer => {
-                if self.score.update(&self.ball) {
-                    self.ball.increase_speed();
+            GameState::Playing => {
+                self.right.update(dt, KeyCode::Up, KeyCode::Down);
 
-                    self.ball.reset();
+                match self.game_mode {
+                    GameMode::SinglePlayer => {
+                        // AI
+                    }
 
-                    if self.score.left >= WIN_SCORE {
-                        self.winner = "Left player wins!".to_string();
-                        self.game_state = GameState::GameOver;
-                    } else if self.score.right >= WIN_SCORE {
-                        self.winner = "Right player wins!".to_string();
-                        self.game_state = GameState::GameOver;
+                    GameMode::TwoPlayer => {
+                        self.left.update(dt, KeyCode::W, KeyCode::S);
                     }
                 }
-            }
 
-            GameState::TwoPlayer => {
-                self.left.update(dt, KeyCode::W, KeyCode::S);
-                self.right.update(dt, KeyCode::Up, KeyCode::Down);
                 self.ball.update(dt);
                 self.ball.check_paddles(&self.left, &self.right);
 
@@ -293,7 +315,16 @@ impl<'a> Game<'a> {
                     self.ball.reset_game();
                     self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
                     self.right = Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
-                    self.game_state = GameState::SinglePlayer;
+
+                    self.game_state = GameState::Playing;
+                }
+
+                if is_key_pressed(KeyCode::Escape) {
+                    self.score = Score::default();
+                    self.ball.reset_game();
+                    self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
+                    self.right = Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
+                    self.game_state = GameState::Menu { selected: 0 };
                 }
             }
         }
@@ -435,17 +466,7 @@ impl<'a> Game<'a> {
                 );
             }
 
-            GameState::SinglePlayer => {
-                clear_background(BLACK);
-                draw_centre_line();
-
-                self.left.draw();
-                self.right.draw();
-                self.ball.draw();
-                self.score.draw();
-            }
-
-            GameState::TwoPlayer => {
+            GameState::Playing => {
                 clear_background(BLACK);
                 draw_centre_line();
 
@@ -471,6 +492,16 @@ impl<'a> Game<'a> {
                     hint,
                     WINDOW_W / 2.0 - hdims.width / 2.0,
                     WINDOW_H / 2.0 + 40.0,
+                    24.0,
+                    GRAY,
+                );
+
+                let hint = "Press Esc to back to the Main Menu";
+                let hdims = measure_text(hint, None, 24, 1.0);
+                draw_text(
+                    hint,
+                    WINDOW_W / 2.0 - hdims.width / 2.0,
+                    WINDOW_H / 2.0 + 70.0,
                     24.0,
                     GRAY,
                 );
