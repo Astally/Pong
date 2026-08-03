@@ -244,25 +244,17 @@ impl<'a> Game<'a> {
                 if is_key_pressed(KeyCode::Enter) {
                     self.game_state = match selected {
                         0 => {
-                            self.score = Score::default();
-                            self.ball.reset_game();
-
-                            self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
-                            self.right =
-                                Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
+                            self.reset_match(paddle_texture);
 
                             self.game_mode = GameMode::SinglePlayer;
+
                             GameState::Playing
                         }
                         1 => {
-                            self.score = Score::default();
-                            self.ball.reset_game();
-
-                            self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
-                            self.right =
-                                Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
+                            self.reset_match(paddle_texture);
 
                             self.game_mode = GameMode::TwoPlayer;
+
                             GameState::Playing
                         }
                         2 => GameState::Controls,
@@ -311,23 +303,26 @@ impl<'a> Game<'a> {
 
             GameState::GameOver => {
                 if is_key_pressed(KeyCode::R) {
-                    self.score = Score::default();
-                    self.ball.reset_game();
-                    self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
-                    self.right = Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
+                    self.reset_match(paddle_texture);
 
                     self.game_state = GameState::Playing;
                 }
 
                 if is_key_pressed(KeyCode::Escape) {
-                    self.score = Score::default();
-                    self.ball.reset_game();
-                    self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
-                    self.right = Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
+                    self.reset_match(paddle_texture);
+
                     self.game_state = GameState::Menu { selected: 0 };
                 }
             }
         }
+    }
+
+    fn reset_match(&mut self, paddle_texture: &'a Texture2D) {
+        self.score = Score::default();
+        self.ball.reset_game();
+
+        self.left = Paddle::new(PADDLE_OFFSET, paddle_texture);
+        self.right = Paddle::new(WINDOW_W - PADDLE_OFFSET - PADDLE_W, paddle_texture);
     }
 
     fn draw(&self) {
