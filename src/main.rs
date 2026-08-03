@@ -126,13 +126,35 @@ impl<'a> Ball<'a> {
     fn check_paddles(&mut self, left: &Paddle, right: &Paddle) {
         if self.rect.overlaps(&left.rect) {
             self.rect.x = left.rect.x + left.rect.w; // push ball out
-            self.vel.x = self.vel.x.abs();
+            self.calculate_bounce_angle(left, true);
         }
 
         if self.rect.overlaps(&right.rect) {
-            self.vel.x = -self.vel.x.abs();
             self.rect.x = right.rect.x - self.rect.w; // push ball out
+            self.calculate_bounce_angle(right, false);
         }
+    }
+
+    fn calculate_bounce_angle(&mut self, paddle: &Paddle, is_left: bool) {
+        let ball_center = self.rect.y + self.rect.h / 2.0;
+        let paddle_center = paddle.rect.y + paddle.rect.h / 2.0;
+
+        let offset = ball_center - paddle_center;
+
+        let normalized = offset / (PADDLE_H / 2.0);
+        let normalized = normalized.clamp(-1.0, 1.0);
+
+        let angle = (normalized * 60.0).to_radians();
+
+        let speed = self.vel.length();
+
+        if is_left {
+            self.vel.x = speed * angle.cos();
+        } else {
+            self.vel.x = -speed * angle.cos();
+        }
+
+        self.vel.y = speed * angle.sin();
     }
 
     fn increase_speed(&mut self) {
