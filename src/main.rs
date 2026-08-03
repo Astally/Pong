@@ -47,19 +47,26 @@ impl<'a> Paddle<'a> {
         self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - PADDLE_H);
     }
 
-    fn update_ai(&mut self, ball: &Ball, dt: f32) {
+    fn update_ai(&mut self, ball: &Ball, dt: f32, difficulty: &Difficulty) {
         let ball_center = ball.rect.y + ball.rect.h / 2.0;
         let paddle_center = self.rect.y + self.rect.h / 2.0;
-
         let diff = ball_center - paddle_center;
 
-        if diff > 5.0 {
-            self.rect.y += PADDLE_SPEED * dt;
-        } else if diff < -5.0 {
-            self.rect.y -= PADDLE_SPEED * dt;
-        }
+        if ball.vel.x < 0.0 {
+            let (speed, threshold) = match difficulty {
+                Difficulty::Easy => (PADDLE_SPEED * 0.55, 25.0),
+                Difficulty::Medium => (PADDLE_SPEED * 0.80, 10.0),
+                Difficulty::Hard => (PADDLE_SPEED * 0.95, 5.0),
+            };
 
-        self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - PADDLE_H);
+            if diff > threshold {
+                self.rect.y += speed * dt;
+            } else if diff < -threshold {
+                self.rect.y -= speed * dt;
+            }
+
+            self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - PADDLE_H);
+        }
     }
 }
 
@@ -179,6 +186,7 @@ struct Score {
 
 enum GameState {
     Menu { selected: usize },
+    DifficultyMenu { selected: usize },
     Controls,
     Playing,
     GameOver,
@@ -188,6 +196,12 @@ enum GameState {
 enum GameMode {
     SinglePlayer,
     TwoPlayer,
+}
+
+enum Difficulty {
+    Easy,
+    Medium,
+    Hard,
 }
 
 impl Score {
@@ -220,6 +234,7 @@ struct Game<'a> {
     score: Score,
     game_state: GameState,
     game_mode: GameMode,
+    difficulty: Difficulty,
     winner: String,
 }
 
@@ -241,6 +256,7 @@ impl<'a> Game<'a> {
             score,
             game_state,
             game_mode,
+            difficulty: Difficulty::Medium,
             winner,
         }
     }
@@ -259,11 +275,9 @@ impl<'a> Game<'a> {
                 if is_key_pressed(KeyCode::Enter) {
                     self.game_state = match selected {
                         0 => {
-                            self.reset_match(paddle_texture);
-
                             self.game_mode = GameMode::SinglePlayer;
 
-                            GameState::Playing
+                            GameState::DifficultyMenu { selected: 0 }
                         }
                         1 => {
                             self.reset_match(paddle_texture);
@@ -279,6 +293,35 @@ impl<'a> Game<'a> {
                 }
             }
 
+            GameState::DifficultyMenu { selected } => {
+                if is_key_pressed(KeyCode::Down) && *selected < 3 {
+                    *selected += 1;
+                }
+                if is_key_pressed(KeyCode::Up) {
+                    *selected = (*selected).saturating_sub(1);
+                }
+
+                if is_key_pressed(KeyCode::Enter) {
+                    match selected {
+                        0 => self.difficulty = Difficulty::Easy,
+                        1 => self.difficulty = Difficulty::Medium,
+                        2 => self.difficulty = Difficulty::Hard,
+                        3 => {
+                            self.game_state = GameState::Menu { selected: 0 };
+                            return;
+                        }
+                        _ => {}
+                    }
+
+                    self.reset_match(paddle_texture);
+                    self.game_state = GameState::Playing;
+                }
+
+                if is_key_pressed(KeyCode::Escape) {
+                    self.game_state = GameState::Menu { selected: 0 };
+                }
+            }
+
             GameState::Controls => {
                 if is_key_pressed(KeyCode::Escape) {
                     self.game_state = GameState::Menu { selected: 0 };
@@ -290,7 +333,7 @@ impl<'a> Game<'a> {
 
                 match self.game_mode {
                     GameMode::SinglePlayer => {
-                        self.left.update_ai(&self.ball, dt);
+                        self.left.update_ai(&self.ball, dt, &self.difficulty);
                     }
 
                     GameMode::TwoPlayer => {
@@ -474,6 +517,34 @@ impl<'a> Game<'a> {
                     22.0,
                     GRAY,
                 );
+            }
+
+            GameState::DifficultyMenu { selected } => {
+                clear_background(BLACK);
+
+                let dims = measure_text("Select Difficulty", None, 40, 1.0);
+                draw_text(
+                    "Select Difficulty",
+                    WINDOW_W / 2.0 - dims.width / 2.0,
+                    WINDOW_H * 1.0 / 7.0,
+                    40.0,
+                    SKYBLUE,
+                );
+
+                const DIFFICULTY_ITEMS: [&str; 4] = ["Easy", "Medium", "Hard", "Back"];
+
+                for (index, items) in DIFFICULTY_ITEMS.iter().enumerate() {
+                    let counter = index as f32 + 2.0;
+
+                    let dims = measure_text(items, None, 30, 1.0);
+                    draw_text(
+                        items,
+                        WINDOW_W / 2.0 - dims.width / 2.0,
+                        WINDOW_H * counter / 7.0,
+                        30.0,
+                        if index == selected { YELLOW } else { GREEN },
+                    );
+                }
             }
 
             GameState::Playing => {
