@@ -223,6 +223,7 @@ enum GameState {
     Menu { selected: usize },
     DifficultyMenu { selected: usize },
     Controls,
+    CountDown { timer: f32 },
     Playing,
     GameOver,
 }
@@ -315,6 +316,8 @@ impl<'a> Game<'a> {
                 if is_key_pressed(KeyCode::Enter) {
                     self.game_state = match selected {
                         0 => {
+                            self.reset_match(paddle_texture);
+
                             self.game_mode = GameMode::SinglePlayer;
 
                             GameState::DifficultyMenu { selected: 0 }
@@ -324,7 +327,7 @@ impl<'a> Game<'a> {
 
                             self.game_mode = GameMode::TwoPlayer;
 
-                            GameState::Playing
+                            GameState::CountDown { timer: 3.0 }
                         }
                         2 => GameState::Controls,
                         3 => std::process::exit(0),
@@ -354,7 +357,7 @@ impl<'a> Game<'a> {
                     }
 
                     self.reset_match(paddle_texture);
-                    self.game_state = GameState::Playing;
+                    self.game_state = GameState::CountDown { timer: 3.0 };
                 }
 
                 if is_key_pressed(KeyCode::Escape) {
@@ -365,6 +368,14 @@ impl<'a> Game<'a> {
             GameState::Controls => {
                 if is_key_pressed(KeyCode::Escape) {
                     self.game_state = GameState::Menu { selected: 0 };
+                }
+            }
+
+            GameState::CountDown { timer } => {
+                *timer -= dt;
+
+                if *timer <= 0.0 {
+                    self.game_state = GameState::Playing;
                 }
             }
 
@@ -387,6 +398,9 @@ impl<'a> Game<'a> {
                 if let Some(point) = self.score.update(&self.ball) {
                     self.ball.increase_speed();
                     self.ball.reset(point);
+
+                    self.game_state = GameState::CountDown { timer: 3.0 };
+                    return;
                 }
 
                 if self.score.left >= WIN_SCORE {
@@ -402,7 +416,7 @@ impl<'a> Game<'a> {
                 if is_key_pressed(KeyCode::R) {
                     self.reset_match(paddle_texture);
 
-                    self.game_state = GameState::Playing;
+                    self.game_state = GameState::CountDown { timer: 3.0 };
                 }
 
                 if is_key_pressed(KeyCode::Escape) {
@@ -584,6 +598,26 @@ impl<'a> Game<'a> {
                         if index == selected { YELLOW } else { GREEN },
                     );
                 }
+            }
+
+            GameState::CountDown { timer } => {
+                clear_background(BLACK);
+                draw_centre_line();
+
+                self.left.draw();
+                self.right.draw();
+                self.ball.draw();
+                self.score.draw();
+
+                let dims = measure_text(timer.ceil().to_string(), None, 120, 1.0);
+
+                draw_text(
+                    timer.ceil().to_string(),
+                    WINDOW_W / 2.0 - dims.width / 2.0,
+                    WINDOW_H / 2.0,
+                    120.0,
+                    WHITE,
+                );
             }
 
             GameState::Playing => {
