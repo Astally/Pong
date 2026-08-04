@@ -4,6 +4,8 @@ const WINDOW_W: f32 = 800.0;
 const WINDOW_H: f32 = 600.0;
 const PADDLE_W: f32 = 12.0;
 const PADDLE_H: f32 = 80.0;
+const SHRINK_AMOUNT: f32 = 5.0;
+const MIN_PADDLE_H: f32 = 60.0;
 const BALL_SIZE: f32 = 12.0;
 const PADDLE_OFFSET: f32 = 20.0;
 const PADDLE_SPEED: f32 = 400.0; // pixels per second
@@ -44,7 +46,7 @@ impl<'a> Paddle<'a> {
             self.rect.y -= PADDLE_SPEED * dt;
         }
 
-        self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - PADDLE_H);
+        self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - self.rect.h);
     }
 
     fn update_ai(&mut self, ball: &Ball, dt: f32, difficulty: &Difficulty) {
@@ -65,8 +67,14 @@ impl<'a> Paddle<'a> {
                 self.rect.y -= speed * dt;
             }
 
-            self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - PADDLE_H);
+            self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - self.rect.h);
         }
+    }
+
+    fn shrink(&mut self) {
+        self.rect.h = (self.rect.h - SHRINK_AMOUNT).max(MIN_PADDLE_H);
+
+        self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - self.rect.h);
     }
 }
 
@@ -141,7 +149,7 @@ impl<'a> Ball<'a> {
 
         let offset = ball_center - paddle_center;
 
-        let normalized = offset / (PADDLE_H / 2.0);
+        let normalized = offset / (paddle.rect.h / 2.0);
         let normalized = normalized.clamp(-1.0, 1.0);
 
         let angle = (normalized * 60.0).to_radians();
@@ -418,6 +426,15 @@ impl<'a> Game<'a> {
                         self.winner = "Right player wins!".to_string();
                         self.game_state = GameState::GameOver;
                         return;
+                    }
+
+                    match point {
+                        Point::Right => {
+                            self.left.shrink();
+                        }
+                        Point::Left => {
+                            self.right.shrink();
+                        }
                     }
 
                     self.ball.increase_speed();
