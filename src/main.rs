@@ -327,7 +327,7 @@ impl<'a> Game<'a> {
 
                             self.game_mode = GameMode::TwoPlayer;
 
-                            GameState::CountDown { timer: 3.0 }
+                            GameState::CountDown { timer: 4.0 }
                         }
                         2 => GameState::Controls,
                         3 => std::process::exit(0),
@@ -357,7 +357,7 @@ impl<'a> Game<'a> {
                     }
 
                     self.reset_match(paddle_texture);
-                    self.game_state = GameState::CountDown { timer: 3.0 };
+                    self.game_state = GameState::CountDown { timer: 4.0 };
                 }
 
                 if is_key_pressed(KeyCode::Escape) {
@@ -372,6 +372,18 @@ impl<'a> Game<'a> {
             }
 
             GameState::CountDown { timer } => {
+                self.right.update(dt, KeyCode::Up, KeyCode::Down);
+
+                match self.game_mode {
+                    GameMode::SinglePlayer => {
+                        self.left.update_ai(&self.ball, dt, &self.difficulty);
+                    }
+
+                    GameMode::TwoPlayer => {
+                        self.left.update(dt, KeyCode::W, KeyCode::S);
+                    }
+                }
+
                 *timer -= dt;
 
                 if *timer <= 0.0 {
@@ -396,19 +408,23 @@ impl<'a> Game<'a> {
                 self.ball.check_paddles(&self.left, &self.right);
 
                 if let Some(point) = self.score.update(&self.ball) {
+                    if self.score.left >= WIN_SCORE {
+                        self.winner = "Left player wins!".to_string();
+                        self.game_state = GameState::GameOver;
+                        return;
+                    }
+
+                    if self.score.right >= WIN_SCORE {
+                        self.winner = "Right player wins!".to_string();
+                        self.game_state = GameState::GameOver;
+                        return;
+                    }
+
                     self.ball.increase_speed();
                     self.ball.reset(point);
 
-                    self.game_state = GameState::CountDown { timer: 3.0 };
+                    self.game_state = GameState::CountDown { timer: 4.0 };
                     return;
-                }
-
-                if self.score.left >= WIN_SCORE {
-                    self.winner = "Left player wins!".to_string();
-                    self.game_state = GameState::GameOver;
-                } else if self.score.right >= WIN_SCORE {
-                    self.winner = "Right player wins!".to_string();
-                    self.game_state = GameState::GameOver;
                 }
             }
 
@@ -416,7 +432,7 @@ impl<'a> Game<'a> {
                 if is_key_pressed(KeyCode::R) {
                     self.reset_match(paddle_texture);
 
-                    self.game_state = GameState::CountDown { timer: 3.0 };
+                    self.game_state = GameState::CountDown { timer: 4.0 };
                 }
 
                 if is_key_pressed(KeyCode::Escape) {
@@ -609,10 +625,16 @@ impl<'a> Game<'a> {
                 self.ball.draw();
                 self.score.draw();
 
-                let dims = measure_text(timer.ceil().to_string(), None, 120, 1.0);
+                let text = if timer > 1.0 {
+                    (timer - 1.0).ceil().to_string()
+                } else {
+                    "GO!".to_string()
+                };
+
+                let dims = measure_text(&text, None, 120, 1.0);
 
                 draw_text(
-                    timer.ceil().to_string(),
+                    &text,
                     WINDOW_W / 2.0 - dims.width / 2.0,
                     WINDOW_H / 2.0,
                     120.0,
