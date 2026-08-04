@@ -1,4 +1,4 @@
-use macroquad::prelude::*;
+use macroquad::{prelude::*, rand::gen_range};
 
 const WINDOW_W: f32 = 800.0;
 const WINDOW_H: f32 = 600.0;
@@ -163,17 +163,25 @@ impl<'a> Ball<'a> {
         self.speed_level = self.speed_level.min(2.0);
     }
 
-    fn reset(&mut self) {
+    fn reset(&mut self, point: Point) {
         self.rect.x = WINDOW_W / 2.0 - BALL_SIZE / 2.0;
         self.rect.y = WINDOW_H / 2.0 - BALL_SIZE / 2.0;
 
-        if self.vel.x > 0.0 {
-            self.vel.x = -self.initial_vel.x * self.speed_level;
-        } else {
-            self.vel.x = self.initial_vel.x * self.speed_level;
-        }
+        let angle: f32 = gen_range(-40.0, 40.0);
+        let angle = angle.to_radians();
 
-        self.vel.y = self.initial_vel.y * self.speed_level;
+        let speed = self.initial_vel.length() * self.speed_level;
+
+        self.vel.y = speed * angle.sin();
+
+        match point {
+            Point::Left => {
+                self.vel.x = -speed * angle.cos();
+            }
+            Point::Right => {
+                self.vel.x = speed * angle.cos();
+            }
+        }
     }
 
     fn reset_game(&mut self) {
@@ -181,7 +189,12 @@ impl<'a> Ball<'a> {
         self.rect.y = WINDOW_H / 2.0 - BALL_SIZE / 2.0;
 
         self.speed_level = 1.0;
-        self.vel = self.initial_vel;
+
+        if gen_range(0, 2) == 0 {
+            self.reset(Point::Left);
+        } else {
+            self.reset(Point::Right);
+        }
     }
 }
 
@@ -226,6 +239,11 @@ enum Difficulty {
     Hard,
 }
 
+enum Point {
+    Left,
+    Right,
+}
+
 impl Score {
     fn draw(&self) {
         let text = format!("{}   {}", self.left, self.right);
@@ -233,19 +251,19 @@ impl Score {
         draw_text(&text, WINDOW_W / 2.0 - dims.width / 2.0, 48.0, 48.0, WHITE);
     }
 
-    fn update(&mut self, ball: &Ball) -> bool {
+    fn update(&mut self, ball: &Ball) -> Option<Point> {
         let left_exit = ball.rect.x + ball.rect.w < 0.0;
         let right_exit = ball.rect.x > WINDOW_W;
 
         if left_exit {
             self.right += 1;
-        }
-
-        if right_exit {
+            Some(Point::Right)
+        } else if right_exit {
             self.left += 1;
+            Some(Point::Left)
+        } else {
+            None
         }
-
-        left_exit || right_exit
     }
 }
 
@@ -366,18 +384,17 @@ impl<'a> Game<'a> {
                 self.ball.update(dt);
                 self.ball.check_paddles(&self.left, &self.right);
 
-                if self.score.update(&self.ball) {
+                if let Some(point) = self.score.update(&self.ball) {
                     self.ball.increase_speed();
+                    self.ball.reset(point);
+                }
 
-                    self.ball.reset();
-
-                    if self.score.left >= WIN_SCORE {
-                        self.winner = "Left player wins!".to_string();
-                        self.game_state = GameState::GameOver;
-                    } else if self.score.right >= WIN_SCORE {
-                        self.winner = "Right player wins!".to_string();
-                        self.game_state = GameState::GameOver;
-                    }
+                if self.score.left >= WIN_SCORE {
+                    self.winner = "Left player wins!".to_string();
+                    self.game_state = GameState::GameOver;
+                } else if self.score.right >= WIN_SCORE {
+                    self.winner = "Right player wins!".to_string();
+                    self.game_state = GameState::GameOver;
                 }
             }
 
