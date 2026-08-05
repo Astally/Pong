@@ -1,6 +1,6 @@
 use macroquad::{prelude::*, rand::gen_range};
 
-use crate::{Point, constants::*, paddle::Paddle};
+use crate::{constants::*, game::Point, paddle::Paddle};
 
 pub struct Ball<'a> {
     pub rect: Rect,

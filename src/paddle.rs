@@ -1,7 +1,6 @@
-use crate::Ball;
-use crate::Difficulty;
 use crate::WINDOW_H;
 use crate::constants::{MIN_PADDLE_H, PADDLE_H, PADDLE_SPEED, PADDLE_W, SHRINK_AMOUNT};
+use crate::{Ball, game::Difficulty};
 use macroquad::prelude::*;
 
 pub struct Paddle<'a> {

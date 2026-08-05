@@ -1,4 +1,4 @@
-use crate::{Point, ball::Ball, constants::*};
+use crate::{ball::Ball, constants::*, game::Point};
 use macroquad::prelude::*;
 
 #[derive(Default)]
