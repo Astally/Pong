@@ -1,3 +1,4 @@
+use crate::score::Score;
 use ball::Ball;
 use macroquad::prelude::*;
 use paddle::Paddle;
@@ -7,6 +8,7 @@ use constants::{PADDLE_OFFSET, PADDLE_W, WIN_SCORE, WINDOW_H, WINDOW_W};
 mod ball;
 mod constants;
 mod paddle;
+mod score;
 
 pub fn window_conf() -> Conf {
     Conf {
@@ -21,12 +23,6 @@ pub fn draw_centre_line() {
         draw_line(WINDOW_W / 2.0, y, WINDOW_W / 2.0, y + 15.0, 2.0, DARKGRAY);
         y += 25.0;
     }
-}
-
-#[derive(Default)]
-pub struct Score {
-    left: u32,
-    right: u32,
 }
 
 pub enum GameState {
@@ -53,29 +49,6 @@ pub enum Difficulty {
 enum Point {
     Left,
     Right,
-}
-
-impl Score {
-    fn draw(&self) {
-        let text = format!("{}   {}", self.left, self.right);
-        let dims = measure_text(&text, None, 48, 1.0);
-        draw_text(&text, WINDOW_W / 2.0 - dims.width / 2.0, 48.0, 48.0, WHITE);
-    }
-
-    fn update(&mut self, ball: &Ball) -> Option<Point> {
-        let left_exit = ball.rect.x + ball.rect.w < 0.0;
-        let right_exit = ball.rect.x > WINDOW_W;
-
-        if left_exit {
-            self.right += 1;
-            Some(Point::Right)
-        } else if right_exit {
-            self.left += 1;
-            Some(Point::Left)
-        } else {
-            None
-        }
-    }
 }
 
 pub struct Game<'a> {
