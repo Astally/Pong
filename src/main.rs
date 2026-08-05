@@ -1,84 +1,15 @@
 use macroquad::{prelude::*, rand::gen_range};
+use paddle::Paddle;
+use paddle::{PADDLE_OFFSET, PADDLE_W};
 
-const WINDOW_W: f32 = 800.0;
-const WINDOW_H: f32 = 600.0;
-const PADDLE_W: f32 = 12.0;
-const PADDLE_H: f32 = 80.0;
-const SHRINK_AMOUNT: f32 = 5.0;
-const MIN_PADDLE_H: f32 = 60.0;
-const BALL_SIZE: f32 = 12.0;
-const PADDLE_OFFSET: f32 = 20.0;
-const PADDLE_SPEED: f32 = 400.0; // pixels per second
+mod paddle;
+
+pub const WINDOW_W: f32 = 800.0;
+pub const WINDOW_H: f32 = 600.0;
+const BALL_SIZE: f32 = 12.0; // pixels per second
 const WIN_SCORE: u32 = 5;
 
-struct Paddle<'a> {
-    rect: Rect,
-    texture: &'a Texture2D,
-}
-
-impl<'a> Paddle<'a> {
-    fn new(x: f32, texture: &'a Texture2D) -> Self {
-        Self {
-            rect: Rect::new(x, WINDOW_H / 2.0 - PADDLE_H / 2.0, PADDLE_W, PADDLE_H),
-            texture,
-        }
-    }
-
-    fn draw(&self) {
-        draw_texture_ex(
-            self.texture,
-            self.rect.x,
-            self.rect.y,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(Vec2::new(self.rect.w, self.rect.h)),
-                ..Default::default()
-            },
-        );
-    }
-
-    fn update(&mut self, dt: f32, going_up_key: KeyCode, going_down_key: KeyCode) {
-        if is_key_down(going_down_key) {
-            self.rect.y += PADDLE_SPEED * dt;
-        }
-
-        if is_key_down(going_up_key) {
-            self.rect.y -= PADDLE_SPEED * dt;
-        }
-
-        self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - self.rect.h);
-    }
-
-    fn update_ai(&mut self, ball: &Ball, dt: f32, difficulty: &Difficulty) {
-        let ball_center = ball.rect.y + ball.rect.h / 2.0;
-        let paddle_center = self.rect.y + self.rect.h / 2.0;
-        let diff = ball_center - paddle_center;
-
-        if ball.vel.x < 0.0 {
-            let (speed, threshold) = match difficulty {
-                Difficulty::Easy => (PADDLE_SPEED * 0.55, 25.0),
-                Difficulty::Medium => (PADDLE_SPEED * 0.80, 10.0),
-                Difficulty::Hard => (PADDLE_SPEED * 0.95, 5.0),
-            };
-
-            if diff > threshold {
-                self.rect.y += speed * dt;
-            } else if diff < -threshold {
-                self.rect.y -= speed * dt;
-            }
-
-            self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - self.rect.h);
-        }
-    }
-
-    fn shrink(&mut self) {
-        self.rect.h = (self.rect.h - SHRINK_AMOUNT).max(MIN_PADDLE_H);
-
-        self.rect.y = clamp(self.rect.y, 0.0, WINDOW_H - self.rect.h);
-    }
-}
-
-struct Ball<'a> {
+pub struct Ball<'a> {
     rect: Rect,
     initial_vel: Vec2,
     vel: Vec2,
@@ -206,14 +137,14 @@ impl<'a> Ball<'a> {
     }
 }
 
-fn window_conf() -> Conf {
+pub fn window_conf() -> Conf {
     Conf {
         window_title: "Pong".to_owned(),
         ..Conf::default()
     }
 }
 
-fn draw_centre_line() {
+pub fn draw_centre_line() {
     let mut y = 10.0;
     while y < WINDOW_H {
         draw_line(WINDOW_W / 2.0, y, WINDOW_W / 2.0, y + 15.0, 2.0, DARKGRAY);
@@ -222,12 +153,12 @@ fn draw_centre_line() {
 }
 
 #[derive(Default)]
-struct Score {
+pub struct Score {
     left: u32,
     right: u32,
 }
 
-enum GameState {
+pub enum GameState {
     Menu { selected: usize },
     DifficultyMenu { selected: usize },
     Controls,
@@ -237,12 +168,12 @@ enum GameState {
 }
 
 #[derive(PartialEq)]
-enum GameMode {
+pub enum GameMode {
     SinglePlayer,
     TwoPlayer,
 }
 
-enum Difficulty {
+pub enum Difficulty {
     Easy,
     Medium,
     Hard,
@@ -276,7 +207,7 @@ impl Score {
     }
 }
 
-struct Game<'a> {
+pub struct Game<'a> {
     ball: Ball<'a>,
     left: Paddle<'a>,
     right: Paddle<'a>,
@@ -704,7 +635,7 @@ impl<'a> Game<'a> {
 }
 
 #[macroquad::main(window_conf)]
-async fn main() {
+pub async fn main() {
     let ball_texture = load_texture("assets/ball.png").await.unwrap();
     let paddle_texture = load_texture("assets/paddle.png").await.unwrap();
 
