@@ -1,14 +1,8 @@
 use crate::Ball;
 use crate::Difficulty;
 use crate::WINDOW_H;
+use crate::constants::{MIN_PADDLE_H, PADDLE_H, PADDLE_SPEED, PADDLE_W, SHRINK_AMOUNT};
 use macroquad::prelude::*;
-
-pub const PADDLE_W: f32 = 12.0;
-pub const PADDLE_H: f32 = 80.0;
-pub const SHRINK_AMOUNT: f32 = 5.0;
-pub const MIN_PADDLE_H: f32 = 60.0;
-pub const PADDLE_OFFSET: f32 = 20.0;
-pub const PADDLE_SPEED: f32 = 400.0;
 
 pub struct Paddle<'a> {
     pub rect: Rect,

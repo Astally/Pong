@@ -1,13 +1,10 @@
 use macroquad::{prelude::*, rand::gen_range};
 use paddle::Paddle;
-use paddle::{PADDLE_OFFSET, PADDLE_W};
 
+use constants::{BALL_SIZE, PADDLE_OFFSET, PADDLE_W, WIN_SCORE, WINDOW_H, WINDOW_W};
+
+mod constants;
 mod paddle;
-
-pub const WINDOW_W: f32 = 800.0;
-pub const WINDOW_H: f32 = 600.0;
-const BALL_SIZE: f32 = 12.0; // pixels per second
-const WIN_SCORE: u32 = 5;
 
 pub struct Ball<'a> {
     rect: Rect,

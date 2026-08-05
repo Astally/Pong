@@ -1,0 +1,10 @@
+pub const PADDLE_W: f32 = 12.0;
+pub const PADDLE_H: f32 = 80.0;
+pub const SHRINK_AMOUNT: f32 = 5.0;
+pub const MIN_PADDLE_H: f32 = 60.0;
+pub const PADDLE_OFFSET: f32 = 20.0;
+pub const PADDLE_SPEED: f32 = 400.0;
+pub const WINDOW_W: f32 = 800.0;
+pub const WINDOW_H: f32 = 600.0;
+pub const BALL_SIZE: f32 = 12.0;
+pub const WIN_SCORE: u32 = 5;
