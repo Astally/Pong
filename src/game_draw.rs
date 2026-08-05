@@ -21,6 +21,8 @@ pub fn draw(game: &Game) {
 
         GameState::Playing => draw_playing(game),
 
+        GameState::Pause { selected } => draw_pause(game, selected),
+
         GameState::GameOver => draw_game_over(game),
     }
 }
@@ -252,4 +254,29 @@ fn draw_game_over(game: &Game) {
         24.0,
         GRAY,
     );
+}
+
+fn draw_pause(game: &Game, selected: usize) {
+    draw_playing(game);
+
+    draw_rectangle(0.0, 0.0, WINDOW_W, WINDOW_H, Color::new(0.0, 0.0, 0.0, 0.7));
+
+    let text = "Quit to Main Menu?";
+    let dims = measure_text(text, None, 40, 1.0);
+    draw_text(
+        text,
+        WINDOW_W / 2.0 - dims.width / 2.0,
+        WINDOW_H / 2.0 - 60.0,
+        40.0,
+        WHITE,
+    );
+
+    let items = ["Yes", "No"];
+    for (index, item) in items.iter().enumerate() {
+        let color = if index == selected { YELLOW } else { GREEN };
+        let y_pos = WINDOW_H / 2.0 + (index as f32 * 50.0);
+
+        let dims = measure_text(item, None, 30, 1.0);
+        draw_text(item, WINDOW_W / 2.0 - dims.width / 2.0, y_pos, 30.0, color);
+    }
 }

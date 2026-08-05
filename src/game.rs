@@ -7,6 +7,7 @@ pub enum GameState {
     Controls,
     CountDown { timer: f32 },
     Playing,
+    Pause { selected: usize },
     GameOver,
 }
 
@@ -151,6 +152,11 @@ impl<'a> Game<'a> {
             }
 
             GameState::Playing => {
+                if is_key_pressed(KeyCode::Escape) {
+                    self.game_state = GameState::Pause { selected: 0 };
+                    return;
+                }
+
                 self.right.update(dt, KeyCode::Up, KeyCode::Down);
 
                 match self.game_mode {
@@ -192,6 +198,32 @@ impl<'a> Game<'a> {
                     self.ball.reset(point);
 
                     self.game_state = GameState::CountDown { timer: 4.0 };
+                }
+            }
+
+            GameState::Pause { selected } => {
+                if is_key_pressed(KeyCode::Up) {
+                    *selected = (*selected + 1) % 2;
+                }
+                if is_key_pressed(KeyCode::Down) {
+                    *selected = (*selected + 1) % 2;
+                }
+
+                if is_key_pressed(KeyCode::Enter) {
+                    match selected {
+                        0 => {
+                            self.reset_match(paddle_texture);
+                            self.game_state = GameState::Menu { selected: 0 };
+                        }
+                        1 => {
+                            self.game_state = GameState::Playing;
+                        }
+                        _ => {}
+                    }
+                }
+
+                if is_key_pressed(KeyCode::Escape) {
+                    self.game_state = GameState::Playing;
                 }
             }
 
